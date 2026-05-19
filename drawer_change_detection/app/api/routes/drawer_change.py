@@ -1,0 +1,72 @@
+from typing import Literal
+
+from fastapi import APIRouter, File, Form, Request, UploadFile
+
+from app.core.config import DEFAULT_SAM_PROMPTS, PipelineConfig
+from app.schemas.drawer_change import (
+    AlignmentStats,
+    ChangeStats,
+    DrawerChangeResponse,
+)
+from app.utils.file_utils import relative_output_url, save_upload_to_temp
+
+router = APIRouter(prefix="/drawer-change", tags=["drawer-change"])
+
+
+def _parse_prompts(prompts: str) -> list[str]:
+    return [p.strip() for p in prompts.split(",") if p.strip()]
+
+
+@router.post("/analyze", response_model=DrawerChangeResponse)
+async def analyze_drawer_change(
+    request: Request,
+    before_image: UploadFile = File(...),
+    after_image: UploadFile = File(...),
+    mode: Literal["bbox", "mask"] = Form("mask"),
+    prompts: str = Form(",".join(DEFAULT_SAM_PROMPTS)),
+    bbox_iou_threshold: float = Form(0.15),
+    mask_iou_threshold: float = Form(0.50),
+    sam_conf: float = Form(0.50),
+):
+    pipeline = request.app.state.pipeline
+    outputs_root = request.app.state.outputs_root
+    temp_dir = request.app.state.temp_dir
+
+    before_bytes = await before_image.read()
+    after_bytes = await after_image.read()
+
+    before_path = save_upload_to_temp(before_bytes, temp_dir, "before")
+    after_path = save_upload_to_temp(after_bytes, temp_dir, "after")
+
+    config = PipelineConfig(
+        sam_prompts=_parse_prompts(prompts),
+        sam_conf=sam_conf,
+        matching_mode=mode,
+        bbox_iou_threshold=bbox_iou_threshold,
+        mask_iou_threshold=mask_iou_threshold,
+    )
+
+    result = pipeline.run(
+        before_path=str(before_path),
+        after_path=str(after_path),
+        config=config,
+    )
+
+    return DrawerChangeResponse(
+        mode=mode,
+        status="success",
+        alignment=AlignmentStats(
+            num_matches=result.alignment.num_matches,
+            num_inliers=result.alignment.num_inliers,
+            inlier_ratio=round(result.alignment.inlier_ratio, 4),
+        ),
+        changes=ChangeStats(
+            new_items=len(result.match_result.new_indices),
+            removed_items=len(result.match_result.removed_indices),
+            matched_items=len(result.match_result.matched_pairs),
+        ),
+        output_image=relative_output_url(
+            result.output_image_path,
+            outputs_root,
+        ),
+    )
