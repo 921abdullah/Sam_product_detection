@@ -1,6 +1,16 @@
-# Homography repo 
+# Homography repo
 
-#Datset
+# Dataset
 Drawers/
+
+# Virtualenv
 .matching/
+
+# Vendored dependency
 LightGlue/
+
+# Runtime outputs
+app/outputs/*
+!app/outputs/.gitkeep
+app/temp/*
+!app/temp/.gitkeep

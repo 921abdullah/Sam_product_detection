@@ -5,7 +5,7 @@ Pipeline-based backend for aligning drawer images (LightGlue), segmenting items 
 ## Project structure
 
 ```text
-drawer_change_detection/
+sam_matching/
 ├── app/
 │   ├── main.py
 │   ├── api/routes/drawer_change.py
@@ -14,10 +14,6 @@ drawer_change_detection/
 │   ├── schemas/drawer_change.py
 │   ├── pipelines/drawer_change_pipeline.py
 │   ├── services/
-│   │   ├── alignment_service.py
-│   │   ├── segmentation_service.py
-│   │   ├── matching_service.py
-│   │   └── rendering_service.py
 │   └── utils/
 ├── requirements.txt
 └── run_local.py
@@ -25,11 +21,10 @@ drawer_change_detection/
 
 ## Setup
 
-From the repo root (use your existing `.matching` venv if present):
+From the repo root (use the `.matching` venv):
 
 ```powershell
-cd drawer_change_detection
-..\.matching\Scripts\pip.exe install fastapi uvicorn python-multipart
+.matching\Scripts\pip.exe install -r requirements.txt
 ```
 
 Place `sam3.pt` where Ultralytics expects it (or in the working directory).
@@ -39,8 +34,7 @@ Place `sam3.pt` where Ultralytics expects it (or in the working directory).
 Use a single worker so models are loaded once:
 
 ```powershell
-cd drawer_change_detection
-..\.matching\Scripts\uvicorn.exe app.main:app --host 0.0.0.0 --port 8000 --workers 1
+.matching\Scripts\uvicorn.exe app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
 Health check: `GET http://localhost:8000/health`
@@ -73,10 +67,9 @@ Output images are written under `app/outputs/` and exposed at `/outputs/<filenam
 ## Local CLI (no HTTP)
 
 ```powershell
-cd drawer_change_detection
-..\.matching\Scripts\python.exe run_local.py ^
-  --before "E:\path\to\before.jpg" ^
-  --after "E:\path\to\after.jpg" ^
+.matching\Scripts\python.exe run_local.py `
+  --before "E:\path\to\before.jpg" `
+  --after "E:\path\to\after.jpg" `
   --mode mask
 ```
 
