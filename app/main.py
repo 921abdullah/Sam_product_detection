@@ -12,11 +12,11 @@ from app.services.alignment_service import AlignmentService
 from app.services.rendering_service import RenderingService
 from app.services.segmentation_service import SegmentationService
 from app.utils.file_utils import ensure_dir
+from fastapi.middleware.cors import CORSMiddleware
 
 APP_ROOT = Path(__file__).resolve().parent
 OUTPUT_DIR = APP_ROOT / "outputs"
 TEMP_DIR = APP_ROOT / "temp"
-
 
 def _build_pipeline(models: ModelRegistry) -> DrawerChangePipeline:
     alignment_service = AlignmentService(
@@ -62,6 +62,14 @@ app = FastAPI(
 
 app.include_router(drawer_change_router, prefix="/api/v1")
 app.mount("/outputs", StaticFiles(directory=str(OUTPUT_DIR)), name="outputs")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # your frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
