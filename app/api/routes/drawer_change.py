@@ -10,15 +10,15 @@ from app.schemas.drawer_change import (
 )
 from app.utils.file_utils import relative_output_url, save_upload_to_temp
 
-router = APIRouter(prefix="/drawer-change", tags=["drawer-change"])
+router = APIRouter(tags=["product_change"])
 
 
 def _parse_prompts(prompts: str) -> list[str]:
     return [p.strip() for p in prompts.split(",") if p.strip()]
 
 
-@router.post("/analyze", response_model=DrawerChangeResponse)
-async def analyze_drawer_change(
+@router.post("/product_change", response_model=DrawerChangeResponse)
+async def analyze_product_change(
     request: Request,
     before_image: UploadFile = File(...),
     after_image: UploadFile = File(...),

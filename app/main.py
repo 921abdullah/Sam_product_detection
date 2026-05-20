@@ -60,7 +60,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-app.include_router(drawer_change_router, prefix="/api/v1")
+app.include_router(drawer_change_router)
 app.mount("/outputs", StaticFiles(directory=str(OUTPUT_DIR)), name="outputs")
 
 app.add_middleware(
