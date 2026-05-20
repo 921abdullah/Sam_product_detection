@@ -20,4 +20,4 @@ class DrawerChangeResponse(BaseModel):
     status: str = "success"
     alignment: AlignmentStats
     changes: ChangeStats
-    output_image: str
+    output_image: str  # absolute URL, e.g. https://host/outputs/overlay_abc.jpg

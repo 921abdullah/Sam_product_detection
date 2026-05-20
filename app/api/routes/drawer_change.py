@@ -8,7 +8,7 @@ from app.schemas.drawer_change import (
     ChangeStats,
     DrawerChangeResponse,
 )
-from app.utils.file_utils import relative_output_url, save_upload_to_temp
+from app.utils.file_utils import absolute_output_url, public_base_url, save_upload_to_temp
 
 router = APIRouter(tags=["product_change"])
 
@@ -65,8 +65,9 @@ async def analyze_product_change(
             removed_items=len(result.match_result.removed_indices),
             matched_items=len(result.match_result.matched_pairs),
         ),
-        output_image=relative_output_url(
+        output_image=absolute_output_url(
             result.output_image_path,
             outputs_root,
+            public_base_url(request),
         ),
     )
