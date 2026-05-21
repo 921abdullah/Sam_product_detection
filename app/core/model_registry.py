@@ -1,5 +1,6 @@
 import torch
 from threading import Lock
+from transformers import AutoImageProcessor, AutoModel
 
 from lightglue import LightGlue, SuperPoint
 from ultralytics.models.sam import SAM3SemanticPredictor
@@ -14,6 +15,8 @@ class ModelRegistry:
         self.matcher = None
         self.sam_predictor = None
         self.sam_lock = Lock()
+        self.dino_processor = None
+        self.dino_model = None
 
     def load_models(self, config: PipelineConfig | None = None):
         config = config or PipelineConfig()
@@ -37,3 +40,7 @@ class ModelRegistry:
         )
 
         self.sam_predictor = SAM3SemanticPredictor(overrides=sam_overrides)
+
+        self.dino_processor = AutoImageProcessor.from_pretrained(config.dino_model_name)
+        self.dino_model = AutoModel.from_pretrained(config.dino_model_name)
+        self.dino_model = self.dino_model.eval().to(self.device)

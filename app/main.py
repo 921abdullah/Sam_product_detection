@@ -9,6 +9,9 @@ from app.core.config import PipelineConfig
 from app.core.model_registry import ModelRegistry
 from app.pipelines.drawer_change_pipeline import DrawerChangePipeline
 from app.services.alignment_service import AlignmentService
+from app.services.embedding_service import EmbeddingService
+from app.services.local_verification_service import LocalVerificationService
+from app.services.mask_change_matcher import MaskChangeMatcher
 from app.services.rendering_service import RenderingService
 from app.services.segmentation_service import SegmentationService
 from app.utils.file_utils import ensure_dir
@@ -29,11 +32,26 @@ def _build_pipeline(models: ModelRegistry) -> DrawerChangePipeline:
         predictor_lock=models.sam_lock,
     )
     rendering_service = RenderingService()
+    embedding_service = EmbeddingService(
+        processor=models.dino_processor,
+        model=models.dino_model,
+        device=models.device,
+    )
+    local_verification_service = LocalVerificationService(
+        extractor=models.extractor,
+        matcher=models.matcher,
+        device=models.device,
+    )
+    mask_change_matcher = MaskChangeMatcher(
+        embedding_service=embedding_service,
+        local_verification_service=local_verification_service,
+    )
 
     return DrawerChangePipeline(
         alignment_service=alignment_service,
         segmentation_service=segmentation_service,
         rendering_service=rendering_service,
+        mask_change_matcher=mask_change_matcher,
         output_dir=OUTPUT_DIR,
     )
 

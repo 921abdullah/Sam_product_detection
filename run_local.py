@@ -25,7 +25,7 @@ def main():
         help="Comma-separated SAM prompts",
     )
     parser.add_argument("--bbox-iou-threshold", type=float, default=0.15)
-    parser.add_argument("--mask-iou-threshold", type=float, default=0.50)
+    parser.add_argument("--mask-iou-threshold", type=float, default=0.35)
     args = parser.parse_args()
 
     ensure_dir(OUTPUT_DIR)

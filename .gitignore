@@ -3,7 +3,9 @@
 # Dataset
 Drawers/
 
-# Virtualenv
+# Virtual environments
+venv/
+.venv/
 .matching/
 
 # Vendored dependency

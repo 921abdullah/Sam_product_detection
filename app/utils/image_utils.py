@@ -32,3 +32,9 @@ def draw_boxes_only(
 
 def save_rgb_as_bgr(path: str, image_rgb: np.ndarray) -> None:
     cv2.imwrite(path, cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR))
+
+
+def rgb_numpy_to_lightglue_tensor(image_rgb: np.ndarray, device: torch.device) -> torch.Tensor:
+    image_rgb = np.ascontiguousarray(image_rgb)
+    tensor = torch.from_numpy(image_rgb).permute(2, 0, 1).float() / 255.0
+    return tensor.to(device)

@@ -6,6 +6,7 @@ import numpy as np
 from app.core.config import PipelineConfig
 from app.services.alignment_service import AlignmentResult, AlignmentService
 from app.services.matching_service import MatchResult, get_matcher
+from app.services.mask_change_matcher import MaskChangeMatcher
 from app.services.rendering_service import RenderingService
 from app.services.segmentation_service import SegmentationResult, SegmentationService
 from app.utils.file_utils import unique_output_path
@@ -30,11 +31,13 @@ class DrawerChangePipeline:
         alignment_service: AlignmentService,
         segmentation_service: SegmentationService,
         rendering_service: RenderingService,
+        mask_change_matcher: MaskChangeMatcher,
         output_dir: str | Path,
     ):
         self.alignment_service = alignment_service
         self.segmentation_service = segmentation_service
         self.rendering_service = rendering_service
+        self.mask_change_matcher = mask_change_matcher
         self.output_dir = Path(output_dir)
 
     def run(
@@ -69,25 +72,24 @@ class DrawerChangePipeline:
             config.sam_prompts,
         )
 
-        matcher = get_matcher(
-            mode=config.matching_mode,
-            bbox_threshold=config.bbox_iou_threshold,
-            mask_threshold=config.mask_iou_threshold,
-        )
-
-        target_h, target_w = alignment.aligned_after_rgb.shape[:2]
-
         if config.matching_mode == "bbox":
+            matcher = get_matcher(
+                mode="bbox",
+                bbox_threshold=config.bbox_iou_threshold,
+                mask_threshold=config.mask_iou_threshold,
+            )
             match_result = matcher.match(
                 before_detection.boxes,
                 after_detection.boxes,
             )
         else:
-            match_result = matcher.match(
+            match_result = self.mask_change_matcher.match(
                 before_detection.masks,
                 after_detection.masks,
-                target_h,
-                target_w,
+                before_rgb=alignment.before_rgb,
+                aligned_after_rgb=alignment.aligned_after_rgb,
+                config=config,
+                output_dir=self.output_dir if config.save_intermediate else None,
             )
 
         output_image = self.rendering_service.render(
