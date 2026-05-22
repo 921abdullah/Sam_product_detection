@@ -24,8 +24,10 @@ def main():
         default=",".join(DEFAULT_SAM_PROMPTS),
         help="Comma-separated SAM prompts",
     )
-    parser.add_argument("--bbox-iou-threshold", type=float, default=0.15)
     parser.add_argument("--mask-iou-threshold", type=float, default=0.80)
+    parser.add_argument("--mask-containment-threshold", type=float, default=0.70)
+    parser.add_argument("--dino-similarity-threshold", type=float, default=0.85)
+    parser.add_argument("--sam-conf", type=float, default=0.40)
     args = parser.parse_args()
 
     ensure_dir(OUTPUT_DIR)
@@ -33,8 +35,10 @@ def main():
     config = PipelineConfig(
         sam_prompts=[p.strip() for p in args.prompts.split(",") if p.strip()],
         matching_mode=args.mode,
-        bbox_iou_threshold=args.bbox_iou_threshold,
+        sam_conf=args.sam_conf,
         mask_iou_threshold=args.mask_iou_threshold,
+        mask_containment_threshold=args.mask_containment_threshold,
+        dino_similarity_threshold=args.dino_similarity_threshold,
     )
 
     print(f"Loading models on device...")
