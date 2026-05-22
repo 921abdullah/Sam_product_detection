@@ -7,7 +7,6 @@ from app.schemas.drawer_change import (
     AlignmentStats,
     ChangeStats,
     DrawerChangeResponse,
-    ObjectMatchStats,
     PipelineParameters,
 )
 from app.utils.file_utils import absolute_output_url, public_base_url, save_upload_to_temp
@@ -26,28 +25,6 @@ def _parameters_from_config(config: PipelineConfig) -> PipelineParameters:
         mask_containment_threshold=config.mask_containment_threshold,
         dino_similarity_threshold=config.dino_similarity_threshold,
     )
-
-
-def _match_stats_from_pairs(matched_pairs: list[dict]) -> list[ObjectMatchStats]:
-    stats: list[ObjectMatchStats] = []
-    for pair in matched_pairs:
-        stats.append(
-            ObjectMatchStats(
-                before_idx=pair["before_idx"],
-                after_idx=pair["after_idx"],
-                match_type=pair.get("match_type"),
-                mask_iou=_round_optional(pair.get("mask_iou")),
-                containment=_round_optional(pair.get("containment")),
-                dino_similarity=_round_optional(pair.get("dino_similarity")),
-            )
-        )
-    return stats
-
-
-def _round_optional(value: float | None, digits: int = 4) -> float | None:
-    if value is None:
-        return None
-    return round(float(value), digits)
 
 
 @router.post("/product_change", response_model=DrawerChangeResponse)
@@ -110,7 +87,6 @@ async def analyze_product_change(
             matched_items=len(result.match_result.matched_pairs),
         ),
         parameters=_parameters_from_config(config),
-        matches=_match_stats_from_pairs(result.match_result.matched_pairs),
         output_image=absolute_output_url(
             result.output_image_path,
             outputs_root,

@@ -32,23 +32,10 @@ class PipelineParameters(BaseModel):
     )
 
 
-class ObjectMatchStats(BaseModel):
-    before_idx: int
-    after_idx: int
-    match_type: str | None = None
-    mask_iou: float | None = None
-    containment: float | None = None
-    dino_similarity: float | None = None
-
-
 class DrawerChangeResponse(BaseModel):
     mode: Literal["bbox", "mask"]
     status: str = "success"
     alignment: AlignmentStats
     changes: ChangeStats
     parameters: PipelineParameters
-    matches: list[ObjectMatchStats] = Field(
-        default_factory=list,
-        description="Per-object match metrics (IoU, containment, DINO where applicable)",
-    )
     output_image: str
