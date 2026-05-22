@@ -25,8 +25,8 @@ async def analyze_product_change(
     mode: Literal["bbox", "mask"] = Form("mask"),
     prompts: str = Form(",".join(DEFAULT_SAM_PROMPTS)),
     bbox_iou_threshold: float = Form(0.15),
-    mask_iou_threshold: float = Form(0.50),
-    sam_conf: float = Form(0.50),
+    mask_iou_threshold: float = Form(0.80),
+    sam_conf: float = Form(0.40),
 ):
     pipeline = request.app.state.pipeline
     outputs_root = request.app.state.outputs_root

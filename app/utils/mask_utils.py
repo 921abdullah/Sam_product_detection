@@ -41,6 +41,97 @@ def mask_iou(mask_a: np.ndarray, mask_b: np.ndarray) -> float:
     return float(intersection / union)
 
 
+def mask_overlap_metrics(mask_a: np.ndarray, mask_b: np.ndarray) -> tuple[float, float]:
+    mask_a = mask_a.astype(bool)
+    mask_b = mask_b.astype(bool)
+
+    intersection = np.logical_and(mask_a, mask_b).sum()
+    area_a = mask_a.sum()
+    area_b = mask_b.sum()
+    union = np.logical_or(mask_a, mask_b).sum()
+
+    if union == 0 or min(area_a, area_b) == 0:
+        return 0.0, 0.0
+
+    iou = intersection / union
+    containment = intersection / min(area_a, area_b)
+    return float(iou), float(containment)
+
+
+def deduplicate_masks(
+    masks: np.ndarray,
+    duplicate_iou_threshold: float = 0.80,
+) -> tuple[np.ndarray, list[int]]:
+    if masks is None or len(masks) == 0:
+        return masks, []
+
+    mask_areas = [int(mask.sum()) for mask in masks]
+    sorted_indices = sorted(
+        range(len(masks)),
+        key=lambda idx: mask_areas[idx],
+        reverse=True,
+    )
+
+    kept_indices: list[int] = []
+
+    for idx in sorted_indices:
+        current_mask = masks[idx]
+        is_duplicate = False
+
+        for kept_idx in kept_indices:
+            if mask_iou(current_mask, masks[kept_idx]) >= duplicate_iou_threshold:
+                is_duplicate = True
+                break
+
+        if not is_duplicate:
+            kept_indices.append(idx)
+
+    kept_indices = sorted(kept_indices)
+    return masks[kept_indices], kept_indices
+
+
+def dilate_binary_mask(mask: np.ndarray, dilation_px: int = 8) -> np.ndarray:
+    mask_uint8 = (mask > 0).astype(np.uint8)
+    kernel_size = 2 * dilation_px + 1
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE,
+        (kernel_size, kernel_size),
+    )
+    return cv2.dilate(mask_uint8, kernel, iterations=1)
+
+
+def mask_to_padded_bbox(
+    mask: np.ndarray,
+    padding_px: int,
+    image_h: int,
+    image_w: int,
+) -> tuple[int, int, int, int] | None:
+    ys, xs = np.where(mask > 0)
+
+    if len(xs) == 0 or len(ys) == 0:
+        return None
+
+    x1 = max(int(xs.min()) - padding_px, 0)
+    y1 = max(int(ys.min()) - padding_px, 0)
+    x2 = min(int(xs.max()) + padding_px + 1, image_w)
+    y2 = min(int(ys.max()) + padding_px + 1, image_h)
+    return x1, y1, x2, y2
+
+
+def points_inside_mask(points_xy: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    if len(points_xy) == 0:
+        return np.zeros((0,), dtype=bool)
+
+    h, w = mask.shape[:2]
+    x = np.round(points_xy[:, 0]).astype(int)
+    y = np.round(points_xy[:, 1]).astype(int)
+
+    valid = (x >= 0) & (x < w) & (y >= 0) & (y < h)
+    inside = np.zeros(len(points_xy), dtype=bool)
+    inside[valid] = mask[y[valid], x[valid]] > 0
+    return inside
+
+
 def overlay_colored_mask(
     image_rgb: np.ndarray,
     mask: np.ndarray,

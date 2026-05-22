@@ -3,6 +3,13 @@ import numpy as np
 import torch
 
 
+def rgb_numpy_to_lightglue_tensor(image_rgb: np.ndarray, device: torch.device) -> torch.Tensor:
+    image_rgb = np.ascontiguousarray(image_rgb)
+    tensor = torch.from_numpy(image_rgb)
+    tensor = tensor.permute(2, 0, 1).float() / 255.0
+    return tensor.to(device)
+
+
 def torch_image_to_rgb_numpy(image_tensor: torch.Tensor) -> np.ndarray:
     """Convert LightGlue tensor (3, H, W) in [0, 1] to RGB uint8 (H, W, 3)."""
     return (

@@ -5,6 +5,7 @@ from lightglue import LightGlue, SuperPoint
 from ultralytics.models.sam import SAM3SemanticPredictor
 
 from app.core.config import PipelineConfig
+from app.services.dino_service import DinoService
 
 
 class ModelRegistry:
@@ -13,6 +14,7 @@ class ModelRegistry:
         self.extractor = None
         self.matcher = None
         self.sam_predictor = None
+        self.dino_service: DinoService | None = None
         self.sam_lock = Lock()
 
     def load_models(self, config: PipelineConfig | None = None):
@@ -37,3 +39,8 @@ class ModelRegistry:
         )
 
         self.sam_predictor = SAM3SemanticPredictor(overrides=sam_overrides)
+
+        self.dino_service = DinoService.from_pretrained(
+            config.dino_model_name,
+            self.device,
+        )

@@ -5,9 +5,11 @@ import numpy as np
 
 from app.core.config import PipelineConfig
 from app.services.alignment_service import AlignmentResult, AlignmentService
+from app.services.dino_service import DinoService
 from app.services.matching_service import MatchResult, get_matcher
 from app.services.rendering_service import RenderingService
 from app.services.segmentation_service import SegmentationResult, SegmentationService
+from app.services.verification_service import VerificationService
 from app.utils.file_utils import unique_output_path
 from app.utils.image_utils import save_rgb_as_bgr
 
@@ -30,11 +32,15 @@ class DrawerChangePipeline:
         alignment_service: AlignmentService,
         segmentation_service: SegmentationService,
         rendering_service: RenderingService,
+        dino_service: DinoService | None,
+        verification_service: VerificationService | None,
         output_dir: str | Path,
     ):
         self.alignment_service = alignment_service
         self.segmentation_service = segmentation_service
         self.rendering_service = rendering_service
+        self.dino_service = dino_service
+        self.verification_service = verification_service
         self.output_dir = Path(output_dir)
 
     def run(
@@ -71,8 +77,10 @@ class DrawerChangePipeline:
 
         matcher = get_matcher(
             mode=config.matching_mode,
-            bbox_threshold=config.bbox_iou_threshold,
-            mask_threshold=config.mask_iou_threshold,
+            config=config,
+            dino_service=self.dino_service,
+            verification_service=self.verification_service,
+            output_dir=self.output_dir if config.matching_mode == "mask" else None,
         )
 
         target_h, target_w = alignment.aligned_after_rgb.shape[:2]
@@ -88,6 +96,9 @@ class DrawerChangePipeline:
                 after_detection.masks,
                 target_h,
                 target_w,
+                alignment.before_rgb,
+                alignment.aligned_after_rgb,
+                config,
             )
 
         output_image = self.rendering_service.render(

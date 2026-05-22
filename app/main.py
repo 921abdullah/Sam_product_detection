@@ -11,6 +11,7 @@ from app.pipelines.drawer_change_pipeline import DrawerChangePipeline
 from app.services.alignment_service import AlignmentService
 from app.services.rendering_service import RenderingService
 from app.services.segmentation_service import SegmentationService
+from app.services.verification_service import VerificationService
 from app.utils.file_utils import ensure_dir
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -29,11 +30,18 @@ def _build_pipeline(models: ModelRegistry) -> DrawerChangePipeline:
         predictor_lock=models.sam_lock,
     )
     rendering_service = RenderingService()
+    verification_service = VerificationService(
+        extractor=models.extractor,
+        matcher=models.matcher,
+        device=models.device,
+    )
 
     return DrawerChangePipeline(
         alignment_service=alignment_service,
         segmentation_service=segmentation_service,
         rendering_service=rendering_service,
+        dino_service=models.dino_service,
+        verification_service=verification_service,
         output_dir=OUTPUT_DIR,
     )
 
